@@ -61,6 +61,6 @@ ARGOCD_PASS=$(kubectl get secret argocd-initial-admin-secret \
 echo "${ARGOCD_PASS}"
 
 echo ""
-echo "ArgoCD UI : https://${ARGOCD_HOST}  (username: admin)"
+echo "ArgoCD UI : http://${ARGOCD_HOST}  (username: admin)"
 echo ""
 echo "Save the password above — script 03 reads it automatically from the secret."

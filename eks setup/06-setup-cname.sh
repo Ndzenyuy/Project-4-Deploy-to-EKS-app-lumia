@@ -55,63 +55,6 @@ else
     exit 1
 fi
 
-# ─── Check 2: Apply manifests ────────────────────────────────────────────────
-echo ""
-echo "[Check 2] Applying manifests from $MANIFESTS_DIR/..."
-if [ ! -d "$MANIFESTS_DIR" ]; then
-    echo "   ❌ Directory '$MANIFESTS_DIR' not found. Run this script from the project root."
-    exit 1
-fi
-APPLY_OUTPUT=$(kubectl apply -f "$MANIFESTS_DIR/" -n "$NAMESPACE" 2>&1)
-APPLY_EXIT=$?
-if [ $APPLY_EXIT -eq 0 ]; then
-    echo "   ✅ Manifests applied"
-else
-    echo "   ⚠️  Some manifests had warnings/errors:"
-    echo "$APPLY_OUTPUT" | sed 's/^/      /'
-    echo "   Continuing..."
-fi
-
-# ─── Check 3: Wait for pods ──────────────────────────────────────────────────
-echo ""
-echo "[Check 3] Waiting for all pods to be Running in '$NAMESPACE'..."
-MAX_WAIT=180
-ELAPSED=0
-INTERVAL=10
-while true; do
-    # tr -d ' ' strips whitespace that wc -l sometimes includes
-    NOT_READY=$(kubectl get pods -n "$NAMESPACE" --no-headers 2>/dev/null \
-        | grep -v -E 'Running|Completed' | wc -l | tr -d ' ')
-    TOTAL=$(kubectl get pods -n "$NAMESPACE" --no-headers 2>/dev/null \
-        | wc -l | tr -d ' ')
-
-    if [ "$TOTAL" -eq 0 ]; then
-        echo "   ⚠️  No pods found in namespace $NAMESPACE. Check manifests were applied correctly."
-        kubectl get pods -n "$NAMESPACE"
-        exit 1
-    fi
-    if [ "$NOT_READY" -eq 0 ]; then
-        echo "   ✅ All $TOTAL pod(s) are Running"
-        break
-    fi
-    if [ "$ELAPSED" -ge "$MAX_WAIT" ]; then
-        echo ""
-        echo "   ❌ Timed out after ${MAX_WAIT}s. Current pod status:"
-        kubectl get pods -n "$NAMESPACE"
-        echo ""
-        echo "   Check logs: kubectl logs -l app=lumia-app -n $NAMESPACE"
-        exit 1
-    fi
-    printf "\r   Waiting for pods... %d/%d ready (%ds elapsed)" \
-        $((TOTAL - NOT_READY)) "$TOTAL" "$ELAPSED"
-    sleep $INTERVAL
-    ELAPSED=$((ELAPSED + INTERVAL))
-done
-
-echo ""
-echo "=== Pre-flight Checks Passed. Starting Route53 CNAME Configuration ==="
-echo ""
-
 # ─── Step 1: Discover Load Balancer DNS ──────────────────────────────────────
 echo "1. Getting Load Balancer DNS from ingress-nginx..."
 LB_DNS=""
