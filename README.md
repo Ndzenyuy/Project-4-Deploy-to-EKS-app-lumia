@@ -1,4 +1,4 @@
-# Project 4 — Lumiatech App Repository
+# Project 4 — Lumiatech App Repository  
 
 This repository contains the **Java Spring MVC application source code, Dockerfiles, and GitHub Actions CI/CD pipeline**. On every push to `main`, the pipeline builds the app, pushes Docker images to Docker Hub, and updates the image tags in the Helm manifest repository so the EKS cluster picks up the new version automatically via ArgoCD.
 
